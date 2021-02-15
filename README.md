@@ -1,24 +1,6 @@
-# 18650
+# accumulators-comparison
 
-## Project setup
-```
-npm install
-```
+Simple accumulator comparison SPA (Vue.js) to collect batteries
+## Example
+http://accumulators-comparison.imhvost.top/
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).

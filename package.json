@@ -1,7 +1,11 @@
 {
-  "name": "18650",
+  "name": "accumulators-comparison",
   "version": "0.1.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imhvost/accumulators-comparison"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -18,7 +22,9 @@
     "@vue/compiler-sfc": "^3.0.0",
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
-    "eslint-plugin-vue": "^7.0.0-0"
+    "eslint-plugin-vue": "^7.0.0-0",
+    "less": "^4.1.0",
+    "less-loader": "^7.3.0"
   },
   "eslintConfig": {
     "root": true,
