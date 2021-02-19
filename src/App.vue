@@ -59,13 +59,17 @@
       >
         <span>Total accumulators need: <b>{{totalАccumulators}} pieces</b></span>
         <button
-          v-if="accumulators.length> 1"
+          v-if="accumulators.length > 1"
           @click="sortAccumulatorsByBenefit()"
         >Sort by benefit</button>
         <button
-          v-if="accumulators.length> 1"
+          v-if="accumulators.length > 1"
           @click="sortAccumulatorsByCapacity()"
         >Sort by capacity</button>
+        <button
+          v-if="accumulators.length > 1"
+          @click="sortAccumulatorsByWeight()"
+        >Sort by weight</button>
       </div>
       <div
         v-if="accumulators.length"
@@ -77,85 +81,77 @@
             :key="index"
             :class="accumulatorBenefitIndex === index ? 'benefit' : ''"
           >
+            <tr v-if="presets">
+              <td colspan="8">
+                <ul class="accumulator-presets">
+                  <li>Presets</li>
+                  <li
+                    v-for="(preset, key) in presets"
+                    :key="key"
+                  >
+                    <a
+                      href="#"
+                      @click.prevent="setAccumulatorPreset(key, index)"
+                    >{{key}}</a>
+                  </li>
+                </ul>
+              </td>
+            </tr>
             <tr>
-              <td>
-                <label>
-                  <span>Model name</span>
-                  <input
-                    type="text"
-                    v-model="accumulator.name"
-                    placeholder="Model name"
-                    @input="updateStorage()"
-                  >
-                </label>
-              </td>
-              <td>
-                <label>
-                  <a
-                    v-if="accumulator.link"
-                    :href="accumulator.link"
-                    target="_blank"
-                  >Link to shop</a>
-                  <span v-else>Link to shop</span>
-                  <input
-                    type="url"
-                    v-model="accumulator.link"
-                    placeholder="Link to shop"
-                    @input="updateStorage()"
-                  >
-                </label>
-              </td>
-              <td>
-                <label>
-                  <span>Voltage, <b>V</b></span>
-                  <input
-                    type="number"
-                    v-model="accumulator.voltage"
-                    placeholder="Voltage"
-                    @input="updateStorage()"
-                  >
-                </label>
-              </td>
-              <td>
-                <label>
-                  <span>Amperage, <b>A</b></span>
-                  <input
-                    type="number"
-                    v-model="accumulator.amperage"
-                    placeholder="Amperage"
-                    @input="updateStorage()"
-                  >
-                </label>
-              </td>
-              <td>
-                <label>
-                  <span>Capacity, <b>mAh</b></span>
-                  <input
-                    type="number"
-                    v-model="accumulator.capacity"
-                    placeholder="Capacity"
-                    @input="updateStorage()"
-                  >
-                </label>
-              </td>
-              <td>
-                <label>
-                  <span>Price, <b>$</b></span>
-                  <input
-                    type="number"
-                    v-model="accumulator.price"
-                    placeholder="Price"
-                    @input="updateStorage()"
-                  >
-                </label>
-              </td>
+              <accumulator-table-input
+                placeholder="Model name"
+                v-model:value="accumulator.name"
+                @updat-storage="updateStorage()"
+              />
+              <accumulator-table-input
+                type="url"
+                placeholder="Link to shop"
+                v-model:value="accumulator.link"
+                :link="accumulator.link"
+                @updat-storage="updateStorage()"
+              />
+              <accumulator-table-input
+                type="number"
+                placeholder="Voltage"
+                unit="V"
+                v-model:value="accumulator.voltage"
+                @updat-storage="updateStorage()"
+              />
+              <accumulator-table-input
+                type="number"
+                placeholder="Amperage"
+                unit="A"
+                v-model:value="accumulator.amperage"
+                @updat-storage="updateStorage()"
+              />
+              <accumulator-table-input
+                type="number"
+                placeholder="Capacity"
+                unit="mAh"
+                v-model:value="accumulator.capacity"
+                @updat-storage="updateStorage()"
+              />
+              <accumulator-table-input
+                type="number"
+                placeholder="Weight"
+                unit="g"
+                v-model:value="accumulator.weight"
+                @updat-storage="updateStorage()"
+              />
+              <accumulator-table-input
+                type="number"
+                placeholder="Price"
+                unit="$"
+                v-model:value="accumulator.price"
+                @updat-storage="updateStorage()"
+              />
               <td>
                 <button @click="copyAccumulator(index)">Copy</button>
                 <button @click="removeAccumulator(index)">Remove</button>
               </td>
             </tr>
             <tr v-if="batteries.length && (accumulator.voltage || accumulator.amperage || accumulator.capacity)">
-              <td colspan="7">
+              <td colspan="8">
                 <table
                   v-if="accumulator.capacity || accumulator.amperage || accumulator.voltage"
                   class="accumulator-total"
@@ -166,6 +162,7 @@
                     <td>Voltage</td>
                     <td>Amperage</td>
                     <td>Capacity</td>
+                    <td>Weight</td>
                     <td>Total Cost</td>
                     <td>Cost 1 Ah</td>
                   </thead>
@@ -198,6 +195,11 @@
                         </span>
                       </td>
                       <td>
+                        <span v-if="battery.p && battery.s && accumulator.weight">
+                          <b>{{getBatteryWeight(battery.p, battery.s, accumulator.weight)}}</b> g
+                        </span>
+                      </td>
+                      <td>
                         <span v-if="battery.p && battery.s  && accumulator.price">
                           <b>{{getBatteryCost(battery.p, battery.s, accumulator.price)}}</b> $
                         </span>
@@ -224,6 +226,11 @@
                       <td>
                         <span v-if="accumulator.capacity">
                           <b>{{getTotalBatteriesCapacity(accumulator.capacity)}}</b> Ah
+                        </span>
+                      </td>
+                      <td>
+                        <span v-if="accumulator.weight">
+                          <b>{{getTotalBatteriesWeight(accumulator.weight)}}</b> g
                         </span>
                       </td>
                       <td>
@@ -255,12 +262,12 @@
 
 <script>
 import { ref, computed } from "vue"
-// import HelloWorld from './components/HelloWorld.vue'
+import AccumulatorTableInput from './components/AccumulatorTableInput.vue'
 
 export default {
   name: 'App',
   components: {
-    // HelloWorld,
+    AccumulatorTableInput,
   },
   setup() {
     const storage = localStorage.getItem('data') ? JSON.parse(localStorage.getItem('data')) : {}
@@ -291,6 +298,7 @@ export default {
     const getBatteryVoltage = (s = 0, voltage = 0) => Math.round((Number(voltage) * Number(s)))
     const getBatteryAmperage = (p = 0, amperage = 0) => Math.round((Number(amperage) * Number(p)))
     const getBatteryCapacity = (p = 0, capacity = 0) => (Number(capacity) / 1000 * Number(p)).toFixed(1)
+    const getBatteryWeight = (p = 0, s = 0, weight = 0) => Math.round(getBatteryPieces(p, s) * weight)
     const getBatteryCost = (p = 0, s = 0, price = 0) => Math.round(Number(p) * Number(s) * Number(price))
     const costBatteriesCapacity = (p = 0, s = 0, price = 0, capacity = 0) => Math.round( getBatteryCost(p, s, price) / getBatteryCapacity(p, capacity) )
     const accumulators = ref(storage.accumulators || [])
@@ -301,6 +309,7 @@ export default {
         voltage: '',
         amperage: '',
         capacity: '',
+        weight: '',
         price: '',
       })
       updateStorage()
@@ -312,6 +321,30 @@ export default {
     const removeAccumulator = index => {
       accumulators.value.splice(index, 1)
       updateStorage()
+    }
+    const presets = {
+      18650: {
+        voltage: 3.7,
+        weight: 45
+      },
+      21700: {
+        voltage: 3.7,
+        weight: 70
+      },
+      26650: {
+        voltage: 3.7,
+        weight: 90
+      },
+      32700: {
+        voltage: 3.2,
+        weight: 145
+      },
+    }
+    const setAccumulatorPreset = (preset, index) => {
+      preset = presets[preset]
+      if(!preset) return
+      const accumulator = accumulators.value[index]
+      Object.keys(preset).forEach(key => accumulator[key] = preset[key])
     }
     const totalАccumulators = computed(() => {
       let count = 0;
@@ -327,17 +360,18 @@ export default {
       let benefitIndex
       let benefit = Infinity
       accumulators.value.forEach((accumulator, index) => {
-        if(!accumulator.benefit){
-          accumulator.benefit = costTotalBatteriesCapacity(accumulator.price, accumulator.capacity)
-        }
+        if(!accumulator.price || !accumulator.capacity) return
+        accumulator.benefit = costTotalBatteriesCapacity(accumulator.price, accumulator.capacity)
         if(Number(accumulator.benefit) < benefit){
           benefit = Number(accumulator.benefit)
           benefitIndex = index
         }
       })
+      console.log(accumulators.value)
       return benefitIndex
     })
     const costTotalBatteriesCapacity = (price = 0, capacity = 0) => Math.round( totalАccumulators.value * Number(price) / (Number(capacity) / 1000 * Number(batteriesP.value)) )
+    const getTotalBatteriesWeight = (weight = 0) => Math.round(Number(weight) * totalАccumulators.value)
     const getTotalBatteriesCapacity = (capacity = 0) => (Number(capacity) / 1000 * batteriesP.value).toFixed(1)
     const getTotalBatteriesCost = (price = 0) => Math.round(Number(price) * totalАccumulators.value)
     const sortAccumulatorsByBenefit = () => {
@@ -350,6 +384,10 @@ export default {
     }
     const sortAccumulatorsByCapacity = () => {
       accumulators.value.sort((a, b) => Number(b.capacity) - Number(a.capacity))
+      updateStorage()
+    }
+    const sortAccumulatorsByWeight = () => {
+      accumulators.value.sort((a, b) => Number(a.weight) - Number(b.weight))
       updateStorage()
     }
     const saveAsJSON = () => {
@@ -409,18 +447,23 @@ export default {
       getBatteryVoltage,
       getBatteryAmperage,
       getBatteryCapacity,
+      getBatteryWeight,
       getBatteryCost,
       costBatteriesCapacity,
       accumulators,
       addAccumulator,
       copyAccumulator,
       removeAccumulator,
+      presets,
+      setAccumulatorPreset,
       totalАccumulators,
       getTotalBatteriesCapacity,
+      getTotalBatteriesWeight,
       costTotalBatteriesCapacity,
       getTotalBatteriesCost,
       sortAccumulatorsByBenefit,
       sortAccumulatorsByCapacity,
+      sortAccumulatorsByWeight,
       accumulatorBenefitIndex,
       saveAsJSON,
       importFromJSON,
@@ -431,19 +474,20 @@ export default {
 }
 </script>
 
-<style lang="less" scoped>
+<style lang="less">
 *{
   margin:0;
   padding:0;
   box-sizing:border-box;
 }
-.page{
+body{
   font-family: 'Franklin Gothic', 'Arial Narrow', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   padding:40px;
   font-size:14px;
+  min-width:1232px;
 }
 .batteries{
   margin-bottom:40px;
@@ -552,6 +596,16 @@ button{
   }
   .benefit{
     background-color:#caffca;
+  }
+}
+.accumulator-presets{
+  list-style:none;
+  display:flex;
+  margin:0 -5px -15px;
+  flex-wrap:wrap;
+  font-size:12px;
+  li{
+    padding:0 5px;
   }
 }
 .accumulator-total{
