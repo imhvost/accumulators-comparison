@@ -426,7 +426,7 @@ export default {
     }
     const getDemoData = () => {
       async function postData() {
-        const response = await fetch('http://accumulators-comparison.imhvost.top/demo.json', {
+        const response = await fetch('https://accumulators-comparison.imhvost.top/demo.json', {
           mode: 'cors',
         })
         return await response.json()
